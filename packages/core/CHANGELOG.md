@@ -1,5 +1,105 @@
 # @voltagent/core
 
+## 0.1.32
+
+### Patch Changes
+
+- [#215](https://github.com/VoltAgent/voltagent/pull/215) [`f2f4539`](https://github.com/VoltAgent/voltagent/commit/f2f4539af7722f25a5aad9f01c2b7b5e50ba51b8) Thanks [@Ajay-Satish-01](https://github.com/Ajay-Satish-01)! - This release introduces powerful new methods for managing conversations with user-specific access control and improved developer experience.
+
+  ### Simple Usage Example
+
+  ```typescript
+  // Get all conversations for a user
+  const conversations = await storage.getUserConversations("user-123").limit(10).execute();
+
+  console.log(conversations);
+
+  // Get first conversation and its messages
+  const conversation = conversations[0];
+  if (conversation) {
+    const messages = await storage.getConversationMessages(conversation.id);
+    console.log(messages);
+  }
+  ```
+
+  ### Pagination Support
+
+  ```typescript
+  // Get paginated conversations
+  const result = await storage.getPaginatedUserConversations("user-123", 1, 20);
+  console.log(result.conversations); // Array of conversations
+  console.log(result.hasMore); // Boolean indicating if more pages exist
+  ```
+
+- [#229](https://github.com/VoltAgent/voltagent/pull/229) [`0eba8a2`](https://github.com/VoltAgent/voltagent/commit/0eba8a265c35241da74324613e15801402f7b778) Thanks [@zrosenbauer](https://github.com/zrosenbauer)! - fix: migrate the provider streams to `AsyncIterableStream`
+
+  Example:
+
+  ```typescript
+  const stream = createAsyncIterableStream(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue("Hello");
+        controller.enqueue(", ");
+        controller.enqueue("world!");
+        controller.close();
+      },
+    })
+  );
+
+  for await (const chunk of stream) {
+    console.log(chunk);
+  }
+
+  // in the agent
+  const result = await agent.streamObject({
+    messages,
+    model: "test-model",
+    schema,
+  });
+
+  for await (const chunk of result.objectStream) {
+    console.log(chunk);
+  }
+  ```
+
+  New exports:
+
+  - `createAsyncIterableStream`
+  - `type AsyncIterableStream`
+
+## 0.1.31
+
+### Patch Changes
+
+- [#213](https://github.com/VoltAgent/voltagent/pull/213) [`ed68922`](https://github.com/VoltAgent/voltagent/commit/ed68922e4c71560c2f68117064b84e874a72009f) Thanks [@baseballyama](https://github.com/baseballyama)! - chore!: drop Node.js v18
+
+- [#223](https://github.com/VoltAgent/voltagent/pull/223) [`80fd3c0`](https://github.com/VoltAgent/voltagent/commit/80fd3c069de4c23116540a55082b891c4b376ce6) Thanks [@omeraplak](https://github.com/omeraplak)! - Add userContext support to retrievers for tracking references and metadata
+
+  Retrievers can now store additional information (like references, sources, citations) in userContext that can be accessed from agent responses. This enables tracking which documents were used to generate responses, perfect for citation systems and audit trails.
+
+  ```ts
+  class MyRetriever extends BaseRetriever {
+    async retrieve(input: string, options: RetrieveOptions): Promise<string> {
+      // Find relevant documents
+      const docs = this.findRelevantDocs(input);
+
+      const references = docs.map((doc) => ({
+        id: doc.id,
+        title: doc.title,
+        source: doc.source,
+      }));
+      options.userContext.set("references", references);
+
+      return docs.map((doc) => doc.content).join("\n");
+    }
+  }
+
+  // Access references from response
+  const response = await agent.generateText("What is VoltAgent?");
+  const references = response.userContext?.get("references");
+  ```
+
 ## 0.1.30
 
 ### Patch Changes
